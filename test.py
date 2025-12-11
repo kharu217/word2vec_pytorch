@@ -1,9 +1,12 @@
 import torch
-import torch.nn as nn
+from model import CBOW
 
+model = CBOW(vocab_size=50000, embedding_dim=300)
+model.load_state_dict(torch.load("weight/cbow_1.pt"))
 
-MSAencoder_layer = nn.TransformerEncoderLayer(d_model=128, nhead=1, dim_feedforward=128, batch_first=True)
-MSA_encoder = nn.TransformerEncoder(MSAencoder_layer, num_layers=4)
-
-A = torch.rand((32, 10, 128))
-print(MSA_encoder(A).shape)
+embedding_layer = None
+for n, p in model.named_parameters() :
+    print(n)
+    if n == "embeddings.weight" :
+        embedding_layer = p
+print(embedding_layer[0])
