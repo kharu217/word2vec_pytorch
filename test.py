@@ -1,12 +1,9 @@
-import torch
-from model import CBOW
+from tokenizers import ByteLevelBPETokenizer
 
-model = CBOW(vocab_size=50000, embedding_dim=300)
-model.load_state_dict(torch.load("weight/cbow_1.pt"))
+tokenizer = ByteLevelBPETokenizer(
+        r"tokenizer\bpe_vocab\vocab.json",
+        r"tokenizer\bpe_vocab\merges.txt"
+    )
 
-embedding_layer = None
-for n, p in model.named_parameters() :
-    print(n)
-    if n == "embeddings.weight" :
-        embedding_layer = p
-print(embedding_layer[0])
+print(tokenizer.encode("orange").ids)
+print(tokenizer.decode([14895]))

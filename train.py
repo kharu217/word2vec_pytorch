@@ -8,7 +8,7 @@ from tqdm import tqdm
 from dataset import text_dataset
 from model import CBOW, skip_gram
 
-def train(data_path:dict, epoch=10, batch_size=8,model="cbow") :
+def train(data_path:dict, epoch=10, batch_size=8,model="cbow", chkpoint_path=None) :
     train_dataset = text_dataset(file_path=data_path["train"], vocap_path=r"tokenizer\bpe_vocab\vocab.json", merges_path=r"tokenizer\bpe_vocab\merges.txt", window_size=5)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size)
 
@@ -23,6 +23,10 @@ def train(data_path:dict, epoch=10, batch_size=8,model="cbow") :
     elif model == "skip_gram" :
         train_model = skip_gram(vocab_size=50000, embedding_dim=300, word_range=5)
     
+
+    if chkpoint_path is not None :
+        train_model.load_state_dict(torch.load(chkpoint_path[0]))
+
     #(B, C, D)
     loss_fn = nn.CrossEntropyLoss()
     optimizer = optim.SGD(params=train_model.parameters())
@@ -33,7 +37,8 @@ def train(data_path:dict, epoch=10, batch_size=8,model="cbow") :
     print("train with", len(train_dataset), "lines of text")
     print("valid with", len(valid_dataset), "lines of text")
     #train start
-    for epch in range(1, epoch+1) :
+    for epch in range(chkpoint_path[1], epoch+1) :
+        f = open("weight/losses.txt", "a+")
         for word, seq in tqdm(train_dataloader) :
             optimizer.zero_grad()
 
@@ -67,10 +72,13 @@ def train(data_path:dict, epoch=10, batch_size=8,model="cbow") :
                 total_valid_loss += loss.item()
         print(f"{epch} epoch : avg train loss => {total_train_loss/len(train_dataloader)}")
         print(f"{epch} epoch : avg valid loss => {total_valid_loss/len(valid_dataloader)}")
+        f.write(f"train :{total_train_loss/len(train_dataloader)}\n valid :{total_valid_loss/len(valid_dataloader)}\n\n")
 
         total_valid_loss = 0
         total_train_loss = 0
-    torch.save(train_model.state_dict(), f"weight/cbow_{epoch}.pt")
+        torch.save(train_model.state_dict(), f"weight/cbow_{epch}.pt")
+        f.close()
+
 if __name__ == "__main__" :
     data_path = {
         "train" : r"C:\Users\User\Downloads\archive (1)\wikitext-103-raw\train.txt",
@@ -78,4 +86,4 @@ if __name__ == "__main__" :
         "test" : r"C:\Users\User\Downloads\archive (1)\wikitext-103-raw\test.txt"
     }
 
-    train(data_path=data_path, model="cbow", epoch=1, batch_size=64)
+    train(data_path=data_path, model="cbow", epoch=500, batch_size=64, chkpoint_path=(r"weight\cbow_6.pt", 7))
